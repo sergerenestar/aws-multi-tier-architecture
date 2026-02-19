@@ -9,6 +9,7 @@
 **/*.tfstate
 **/*.tfstate.*
 
+
 # Crash logs
 crash.log
 crash.*.log
@@ -60,3 +61,5 @@ Thumbs.db
 ########################################
 
 *.log
+
+

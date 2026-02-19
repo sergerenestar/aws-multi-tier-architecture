@@ -1,10 +1,16 @@
 # -------------------------
-# S3 bucket for Terraform state
+# Terraform Remote State Backend (Bootstrap)
+# Creates:
+# - S3 bucket for Terraform state (private, versioned, encrypted)
+# - DynamoDB table for state locking
 # -------------------------
+
+# S3 bucket for Terraform state (name passed via variables to keep repo public-safe)
 resource "aws_s3_bucket" "tf_state" {
-  bucket = "serge-tfstate-191303961254"
+  bucket = var.tf_state_bucket_name
 
   lifecycle {
+    # Protect remote state bucket from accidental deletion
     prevent_destroy = true
   }
 
@@ -14,8 +20,7 @@ resource "aws_s3_bucket" "tf_state" {
   }
 }
 
-#Block for public access
-# since rhis reurce will be storing Terraform state, the public access is block ensuring that the bucket is not publicly accessible.
+# Block all public access (required for state bucket)
 resource "aws_s3_bucket_public_access_block" "tf_state" {
   bucket = aws_s3_bucket.tf_state.id
 
@@ -25,7 +30,7 @@ resource "aws_s3_bucket_public_access_block" "tf_state" {
   restrict_public_buckets = true
 }
 
-#enabling versioning on the S3 bucket to maintain a history of changes
+# Enable versioning to keep history of state changes
 resource "aws_s3_bucket_versioning" "tf_state" {
   bucket = aws_s3_bucket.tf_state.id
 
@@ -33,25 +38,25 @@ resource "aws_s3_bucket_versioning" "tf_state" {
     status = "Enabled"
   }
 }
-#  Encrypting the S3 bucket using AWS KMS to ensure that the Terraform state files are securely stored.
+
+# Encrypt state at rest
+# Option A (simple): SSE-S3 with AES256 (no extra KMS request cost)
 resource "aws_s3_bucket_server_side_encryption_configuration" "tf_state" {
   bucket = aws_s3_bucket.tf_state.id
 
   rule {
     apply_server_side_encryption_by_default {
-      sse_algorithm     = "AES256"
-
+      sse_algorithm = "AES256"
     }
   }
 }
 
-
- #-------------------------
+# -------------------------
 # DynamoDB table for state locking
-# this resource creates a DynamoDB table that Terraform will use for state locking, preventing concurrent modifications to the state file and ensuring consistency during Terraform operations.
+# Prevents concurrent state modifications
 # -------------------------
 resource "aws_dynamodb_table" "tf_lock" {
-  name         = "terraform-locks"
+  name         = var.tf_lock_table_name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -65,4 +70,3 @@ resource "aws_dynamodb_table" "tf_lock" {
     Environment = "global"
   }
 }
-

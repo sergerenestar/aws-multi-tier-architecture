@@ -1,0 +1,2 @@
+environment           = "dev"
+artifacts_bucket_name = "serge-tfstate-191303961254"

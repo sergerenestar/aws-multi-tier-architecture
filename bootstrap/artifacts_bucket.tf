@@ -1,15 +1,36 @@
-# This file defines an S3 bucket resource named "artifacts" that will be used to store Spring Boot artifacts.
-# The bucket is tagged with metadata for identification and management purposes.
+# S3 bucket to store application artifacts (e.g., Spring Boot JARs/zips).
+# Bucket name is provided via variables so this repo is safe to share publicly.
+
 resource "aws_s3_bucket" "artifacts" {
-  bucket = "geolab-artifacts-191303961254"
+  bucket = var.artifacts_bucket_name
 
   lifecycle {
-    prevent_destroy = false
+    # Protect prod buckets from accidental deletion
+    prevent_destroy = var.environment == "prod"
   }
 
   tags = {
-    Name        = "geolab-artifacts"
+    Name        = "geolab-artifacts-${var.environment}"
     Purpose     = "spring-boot-artifacts"
-    Environment = "dev"
+    Environment = var.environment
+  }
+}
+
+
+resource "aws_s3_bucket_versioning" "artifacts_versioning" {
+  bucket = aws_s3_bucket.artifacts.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts_encryption" {
+  bucket = aws_s3_bucket.artifacts.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
   }
 }
