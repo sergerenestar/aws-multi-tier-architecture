@@ -1,0 +1,62 @@
+########################################
+# Terraform
+########################################
+
+# Local .terraform directories
+**/.terraform/*
+
+# Terraform state files
+**/*.tfstate
+**/*.tfstate.*
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Exclude tfvars (may contain secrets)
+*.tfvars
+*.tfvars.json
+
+# Ignore backend config overrides
+backend.hcl
+
+# Override files
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+########################################
+# Sensitive / Secrets
+########################################
+
+# Environment variable files
+.env
+.env.*
+
+# AWS credentials files (just in case)
+.aws/
+credentials
+config
+
+########################################
+# OS / Editor
+########################################
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# JetBrains
+.idea/
+
+########################################
+# Logs
+########################################
+
+*.log
