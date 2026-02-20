@@ -27,6 +27,9 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# chart.md files kept private
+chart.md
+
 ########################################
 # Sensitive / Secrets
 ########################################
