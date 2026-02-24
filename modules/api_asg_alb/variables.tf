@@ -1,22 +1,25 @@
 ############################################
-# modules/api_ec2_alb/variables.tf
+# modules/api_asg_alb/variables.tf
 # Wrapper that composes:
 # - api_common_alb
-# - api_compute_ec2
+# - api_compute_asg
 ############################################
 
 variable "name" { type = string }
 variable "environment" { type = string }
-variable "tags" {
-  type = map(string)
-  default = {}
+variable "tags" { 
+  type = map(string) 
+  default = {} 
   }
 
+# Networking (common ALB)
 variable "vpc_id" { type = string }
 variable "public_subnet_ids" { type = list(string) }
-variable "private_subnet_id" {
-  description = "Single private subnet for dev EC2 instance"
-  type        = string
+
+# Networking (compute)
+variable "private_subnet_ids" {
+  description = "Private subnets across at least 2 AZs for HA"
+  type        = list(string)
 }
 
 variable "app_sg_id" { type = string }
@@ -25,6 +28,27 @@ variable "app_port" { type = number }
 variable "health_check_path" {
   type    = string
   default = "/actuator/health"
+}
+
+# Compute sizing
+variable "instance_type" {
+  type    = string
+  default = "t3.small"
+}
+
+variable "desired_capacity" {
+  type    = number
+  default = 2
+}
+
+variable "min_size" {
+  type    = number
+  default = 2
+}
+
+variable "max_size" {
+  type    = number
+  default = 4
 }
 
 # Artifact + runtime + DB
@@ -38,13 +62,6 @@ variable "db_username" { type = string }
 variable "db_password" { 
   type = string 
   sensitive = true 
-  description = "DB password (consider using SSM/Secrets Manager instead of tfvars)"
-}
-
-# EC2 sizing
-variable "instance_type" {
-  type    = string
-  default = "t3.micro"
 }
 
 # Observability log groups

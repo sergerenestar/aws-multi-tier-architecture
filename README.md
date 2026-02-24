@@ -1,150 +1,108 @@
 # AWS Multi-Tier Architecture (Terraform)
 
-Production-grade AWS multi-tier infrastructure built with Terraform using a **bootstrap + environment separation** workflow.
+Production-style AWS infrastructure built with Terraform using modular design and environment separation.
 
-This project implements a secure, modular, and environment-aware 3-tier architecture including:
-
-- **Network Layer** (VPC, subnets, NAT, route tables, security groups)
-- **Frontend Layer** (S3 + CloudFront + OAC)
-- **Application Layer** (ALB + EC2 Auto Scaling)
-- **Database Layer** (RDS MySQL in private subnets)
-
-Designed to simulate real-world cloud architecture patterns used in production environments.
-
----
+This project implements a secure, scalable **3-tier architecture** with distinct **dev** and **prod** environments, following real-world cloud engineering best practices.
 
 ## 🏗 Architecture Overview
 
-Each module includes its own rendered architecture diagram for clarity and modular documentation.
+🌐 **Network Layer**  
+VPC · Public & Private Subnets · NAT Gateway · Route Tables · Security Groups
 
-### Network Module
-![Network Architecture](modules/network/chart.png)
+🎨 **Frontend**  
+S3 Static Website + CloudFront CDN + Origin Access Control (OAC)
 
-### Frontend Module
-![Frontend Architecture](modules/frontend_s3_cf/chart.png)
+⚙️ **API – Dev**  
+Public Application Load Balancer + Single EC2 Instance (cost-efficient)
 
-### API / Compute Module
-![API Architecture](modules/api_ec2_alb/chart.png)
+⚙️ **API – Production**  
+Public Application Load Balancer + Auto Scaling Group (multi-AZ)
 
-### Database Module
-![Database Architecture](modules/rds_mysql/chart.png)
+📊 **Observability**  
+CloudWatch Logs (application + system) · Metrics · Alarms · Dashboards
 
----
+🗄 **Database**  
+RDS MySQL in private subnets · No public exposure · Multi-AZ capable
 
-## ✅ What This Repository Demonstrates
+### Architecture Summary
 
-### Cloud Architecture
-- Custom VPC with public and private subnets across multiple AZs  
-- Internet Gateway + NAT Gateway for controlled outbound traffic  
-- ALB distributing traffic to EC2 instances  
-- RDS MySQL isolated in private subnets  
-- S3 static frontend served through CloudFront CDN  
+- **Frontend**  
+  - S3 static website  
+  - CloudFront CDN with Origin Access Control
 
-### Security Design
-- Layered security boundaries (Public → Private → Database)  
-- Security Groups enforcing:
-  - ALB → EC2
-  - EC2 → RDS
-- No direct public access to application or database tier  
-- NAT-only outbound access for private resources  
+- **Application Layer**  
+  - Public Application Load Balancer  
+  - **Dev**: Single EC2 instance (cost-efficient)  
+  - **Prod**: Auto Scaling Group across multiple AZs
 
-### High Availability
-- Multi-AZ subnet design  
-- ALB health checks  
-- Decoupled tiers  
-- CloudFront global edge caching  
+- **Database**  
+  - RDS MySQL running in private subnets  
+  - No public access
 
-### Cost Awareness
-- Environment-based scaling (dev vs prod)  
-- Modular design for resource right-sizing  
-- NAT usage controlled  
-- No unnecessary public exposure  
+- **Observability**  
+  - CloudWatch Logs (application + system logs)  
+  - EC2 / ASG / ALB metrics  
+  - Environment-specific dashboards & alarms
 
-### Terraform Best Practices
-- Remote state bootstrap phase  
-- Separate `dev` and `prod` environments  
-- Reusable modules  
-- Clear input/output variables  
-- Explicit dependency management  
+## 🔐 Security Design
 
----
+- Strict tier isolation: **Public → Private → Database**
+- **No public IPs** on EC2 or RDS instances
+- **SSM Session Manager** for secure access (no open SSH ports)
+- Security Groups enforce least privilege:
+  - Internet → ALB only
+  - ALB → Application (app port)
+  - Application → RDS (database port)
+- NAT Gateway provides controlled outbound internet access for private resources
 
-## 🗂 Repository Structure
-```text
-├─ bootstrap/ # Remote state + foundational resources
-│ ├─ artifacts_bucket.tf
-│ ├─ main.tf
-│ ├─ outputs.tf
-│ ├─ providers.tf
-│ ├─ variables.tf
-│ └─ versions.tf
-│
-├─ env/ # Environment-specific deployments
-│ ├─ dev/
-│ │ ├─ backend.hcl
-│ │ ├─ backend.tf
-│ │ ├─ main.tf
-│ │ ├─ outputs.tf
-│ │ ├─ providers.tf
-│ │ ├─ terraform.tfvars
-│ │ ├─ variables.tf
-│ │ └─ versions.tf
-│ │
-│ └─ prod/
-│ ├─ backend.hcl
-│ ├─ backend.tf
-│ ├─ main.tf
-│ ├─ outputs.tf
-│ ├─ providers.tf
-│ ├─ terraform.tfvars
-│ ├─ variables.tf
-│ └─ versions.tf
-│
-└─ modules/ # Reusable infrastructure components
+## 🚀 High Availability (Production)
+
+- Multi-AZ subnets and resources
+- Auto Scaling Group with ELB health checks
+- Rolling instance refresh for zero-downtime updates
+- CloudFront edge caching and global distribution for frontend
+
+## ⚖️ Dev vs Prod Strategy
+
+| Concern          | Dev                              | Prod                                      |
+|------------------|----------------------------------|-------------------------------------------|
+| Compute          | Single EC2 instance              | Auto Scaling Group                        |
+| Availability     | Basic (single AZ possible)       | Multi-AZ                                  |
+| Scaling          | None                             | Automatic (based on CPU, etc.)            |
+| CPU Alarm        | Instance-based                   | ASG-based                                 |
+| Cost             | Low                              | Higher but resilient & scalable           |
+
+## 🛠 Terraform Best Practices Demonstrated
+
+- Remote state bootstrap (S3 backend)
+- Environment-isolated state files (`dev` vs `prod`)
+- Reusable, composable modules
+- Clear input/output boundaries
+- Clean separation of networking, compute, scaling, and observability concerns
+
+## 📂 Repository Structure
+
+bootstrap/           # Remote state bucket + foundational resources
+env/
+├─ dev/            # Development environment (single EC2)
+└─ prod/           # Production environment (ASG + full HA)
+modules/             # Reusable infrastructure components
 ├─ network/
-│ ├─ main.tf
-│ ├─ variables.tf
-│ ├─ outputs.tf
-│ └─ chart.png
-│
 ├─ frontend_s3_cf/
-│ ├─ main.tf
-│ ├─ variables.tf
-│ ├─ outputs.tf
-│ └─ chart.png
-│
-├─ api_ec2_alb/
-│ ├─ main.tf
-│ ├─ variables.tf
-│ ├─ outputs.tf
-│ └─ chart.png
-│
-└─ rds_mysql/
-├─ main.tf
-├─ variables.tf
-├─ outputs.tf
-└─ chart.png
+├─ api_common_alb/
+├─ api_compute_ec2/
+├─ api_compute_asg/
+└─ api_asg_alb/    # Combined prod stack (ALB + ASG)
 
+## 🎯 What This Demonstrates
 
-## 🎯 Design Goals
-
-- Clear separation of concerns  
-- Environment isolation (dev/prod)  
-- Reproducible infrastructure  
-- Secure-by-default networking  
-- Modular architecture ready for scaling  
-- Documentation embedded alongside code  
+- Real-world AWS production architecture patterns
+- Clear evolution path: **dev (simple & cheap) → prod (resilient & scalable)**
+- Secure-by-default networking design
+- Modular and maintainable Terraform code
+- Built-in observability (CloudWatch Agent + metrics)
+- Cost-aware cloud engineering practices
 
 ---
 
-## 🚀 Future Enhancements
-
-- Multi-region failover architecture  
-- CI/CD pipeline with CodePipeline  
-- Blue/Green deployment strategy  
-- WAF + enhanced security hardening  
-- Automated diagram generation  
-
----
-
-Built to reflect real-world AWS production architecture patterns.
+Built for learning, reference, and real-world applicability.
