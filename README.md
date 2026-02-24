@@ -70,6 +70,7 @@ Each module includes its own rendered architecture diagram for clarity and modul
 ---
 
 ## 🗂 Repository Structure
+```text
 ├─ bootstrap/ # Remote state + foundational resources
 │ ├─ artifacts_bucket.tf
 │ ├─ main.tf
@@ -124,8 +125,6 @@ Each module includes its own rendered architecture diagram for clarity and modul
 ├─ outputs.tf
 └─ chart.png
 
-
----
 
 ## 🎯 Design Goals
 
